@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pizza Ordering System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header>
+    <h1>🍕 Welcome to Pizza Planet 🍕</h1>
+    <p>We have delicious pizza with fresh ingredients!</p>
+</header>
+
+<div class="hero">
+    <div class="hero-content">
+        <h1>🍕 Select the pizza you want 🍕</h1>
+        <p>Order your pizza now!</p>
+        <a href="#order-form" class="btn">Start Your Order</a>
+    </div>
+</div>
+
+<!-- The pizzas from app.py are here -->
+<div class="pizza-container">
+    <div class="pizza-box" style="background-image: url('/static/images/cheese.jpg');">
+        <h3>Cheese Pizza</h3>
+        <p>Toppings: Mozzarella Cheese, Tomato Sauce</p>
+        <p>Price: kr198.00</p>
+    </div>
+    <div class="pizza-box" style="background-image: url('/static/images/pepperoni.jpg');">
+        <h3>Pepperoni Pizza</h3>
+        <p>Toppings: Mozzarella Cheese, Pepperoni, Tomato Sauce</p>
+        <p>Price: kr298.99</p>
+    </div>
+    <div class="pizza-box" style="background-image: url('/static/images/ham.jpg');">
+        <h3>Ham Pizza</h3>
+        <p>Toppings: Mozzarella Cheese, Ham, Mushrooms, Tomato Sauce</p>
+        <p>Price: kr298.00</p>
+    </div>
+    <div class="pizza-box" style="background-image: url('/static/images/meaty.jpg');">
+        <h3>Meaty Pizza</h3>
+        <p>Toppings: Mozzarella Cheese, Bacon, Beef, Chicken, Mushrooms</p>
+        <p>Price: kr365.00</p>
+    </div>
+</div>
+
+ <!-- This is for ordering -->
+<div class="flex-container">
+    <div class="pizza-box order-box" id="order-form">
+        <h3>Order Your Pizza</h3>
+        <form method="POST" action="/">
+            <label for="name">Name:</label>
+            <input type="text" name="name" placeholder="Your name" required>
+
+            <label for="contact">Contact Number:</label>
+            <input type="text" name="contact" placeholder="Your contact number" required>
+
+            <div id="order-lines">
+                <div class="order-line">
+                    <label for="pizza_type">Select Pizza Type:</label>
+                    <select name="pizza_type[]" class="pizza-type" required>
+                        <option value="Cheese">Cheese Pizza</option>
+                        <option value="Pepperoni">Pepperoni Pizza</option>
+                        <option value="Ham">Ham Pizza</option>
+                        <option value="Meaty">Meaty Pizza</option>
+                    </select>
+
+                    <label for="quantity">Quantity:</label>
+                    <input type="number" name="quantity[]" class="quantity" min="1" max="10" value="1" required>
+
+                    <p>Line Total: <span class="line-total">kr0.00</span></p>
+                </div>
+            </div>
+
+            <button type="button" id="add-line">+ Add Another Pizza</button>
+            <hr>
+            <p>Total Price: <span id="overall-total">kr0.00</span></p>
+            <button type="submit">Order Now</button>
+        </form>
+    </div>
+
+    <!-- when ordered has taken place, the order pops up on the right side -->
+    {% if order %}
+    <div class="pizza-box summary-box">
+        <h3>-- 🍕Order Summary🍕 --</h3>
+        <p><strong>Name:</strong> {{ order.name }}</p>
+        <p><strong>Telephone number:</strong> {{ order.contact }}</p>
+        <p><strong>You ordered:</strong></p>
+        <pre>{{ order.description }}</pre>
+        <p><strong>Total Price:</strong> {{ order.price }}</p>
+        <p>🍕 Thank you for your order! 🍕</p>
+        <p>🍕 Your pizza is being made. 🍕</p
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// we need to fix the pricing so that it can be updated
+const pizzaPrices = {
+    "Cheese": 198.00,
+    "Pepperoni": 298.99,
+    "Ham": 298.00,
+    "Meaty": 365.00
+};
+
+const orderLinesContainer = document.getElementById('order-lines');
+const addLineButton = document.getElementById('add-line');
+const overallTotalSpan = document.getElementById('overall-total');
+
+function calculateLineTotal(line) {
+    const pizzaTypeSelect = line.querySelector('.pizza-type');
+    const quantityInput = line.querySelector('.quantity');
+    const lineTotalSpan = line.querySelector('.line-total');
+
+    const pizzaType = pizzaTypeSelect.value;
+    const quantity = parseInt(quantityInput.value, 10) || 0;
+    const price = pizzaPrices[pizzaType] || 0;
+    const total = price * quantity;
+
+    lineTotalSpan.textContent = `kr${total.toFixed(2)}`;
+    return total;
+}
+
+function calculateOverallTotal() {
+    let sum = 0;
+    const lines = orderLinesContainer.querySelectorAll('.order-line');
+    lines.forEach(line => {
+        sum += calculateLineTotal(line);
+    });
+    overallTotalSpan.textContent = `kr${sum.toFixed(2)}`;
+}
+
+orderLinesContainer.addEventListener('change', (e) => {
+    if (e.target.classList.contains('pizza-type') || e.target.classList.contains('quantity')) {
+        calculateOverallTotal();
+    }
+});
+
+addLineButton.addEventListener('click', () => {
+    const newLine = document.createElement('div');
+    newLine.className = 'order-line';
+    newLine.innerHTML = `
+        <label>Select Pizza Type:</label>
+        <select name="pizza_type[]" class="pizza-type" required>
+            <option value="Cheese">Cheese Pizza</option>
+            <option value="Pepperoni">Pepperoni Pizza</option>
+            <option value="Ham">Ham Pizza</option>
+            <option value="Meaty">Meaty Pizza</option>
+        </select>
+
+        <label>Quantity:</label>
+        <input type="number" name="quantity[]" class="quantity" min="1" max="10" value="1" required>
+
+        <p>Line Total: <span class="line-total">kr0.00</span></p>
+    `;
+    orderLinesContainer.appendChild(newLine);
+    calculateOverallTotal();
+});
+
+calculateOverallTotal();
+</script>
+</body>
+</html>
